@@ -39,6 +39,9 @@ def pytest_addoption(parser):
         flags = [flag for flag in flags if flag.startswith("--")]
         parser.addoption(*flags, **specifiers)
 
+    # Add an option to specify the Python configuration file
+    parser.addoption("--config", default="test/int/component_config.py")
+
 
 @pytest.fixture(scope='session')
 def fprime_test_api_session(request):
