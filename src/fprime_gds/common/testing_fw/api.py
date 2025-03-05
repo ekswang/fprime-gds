@@ -215,6 +215,27 @@ class IntegrationTestAPI(DataHandler):
         """
         self.event_log_filter = self.get_event_pred(event, args, severity, time_pred)
 
+    def get_mnemonic(self, item=None):
+        """
+        Get the mnemonic string of the specified dictionary item
+        Args:
+            item: Either dictionary item id (int) or a dictionary item name (str)
+        Returns:
+            Either a mnemonic string or a passing id (int) representing the dictionary item
+        """
+        fsw_dict = self.pipeline.dictionaries.command_name | \
+                   self.pipeline.dictionaries.channel_name | \
+                   self.pipeline.dictionaries.event_name
+
+        if isinstance(item, str):
+            matching = [fsw_dict[name].get_id() for name in fsw_dict.keys() if name.endswith(f".{item}")]
+            if not matching:
+                msg = f"The corresponding mnemonic for {item} wasn't in the dictionary"
+                raise KeyError(msg)
+            return matching[0]
+        else:
+            return item
+
     ######################################################################################
     #   History Functions
     ######################################################################################
@@ -321,6 +342,8 @@ class IntegrationTestAPI(DataHandler):
         Returns:
             The command ID (int)
         """
+        command = self.get_mnemonic(command)
+        
         if isinstance(command, str):
             cmd_dict = self.pipeline.dictionaries.command_name
             if command in cmd_dict:
@@ -537,6 +560,8 @@ class IntegrationTestAPI(DataHandler):
         Returns:
             an instance of telemetry_predicate
         """
+        channel = self.get_mnemonic(channel)
+        
         if isinstance(channel, predicates.telemetry_predicate):
             return channel
 
@@ -758,6 +783,8 @@ class IntegrationTestAPI(DataHandler):
         Returns:
             an instance of event_predicate
         """
+        event = self.get_mnemonic(event)
+        
         if isinstance(event, predicates.event_predicate):
             return event
 
