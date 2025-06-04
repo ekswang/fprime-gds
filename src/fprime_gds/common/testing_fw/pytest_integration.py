@@ -52,6 +52,12 @@ def pytest_addoption(parser):
         action="store_true",
         help="Enable JUnitXML report generation to a specified location"
     )
+    # Add an option to specify a json config file that maps instances
+    parser.addoption(
+        "--deployment-config",
+        action="store",
+        help="Path to JSON configuration file for mapping deployment instances"
+    )
 
 def pytest_configure(config):
     """ This is a hook to allow plugins and conftest files to perform initial configuration
@@ -62,6 +68,10 @@ def pytest_configure(config):
     # Create a JUnit XML report file to capture the test result in a specified location
     if config.getoption("--gen-junitxml"):
         config.option.xmlpath = Path(config.getoption("--logs")) / config.getoption("--junit-xml-file")
+
+    # Get the file path to the deployment configuration file
+    if config.getoption("--deployment-config"):
+        config.option.deployment_config = config.getoption("--deployment-config")
 
 @pytest.fixture(scope='session')
 def fprime_test_api_session(request):
@@ -91,6 +101,10 @@ def fprime_test_api_session(request):
 
         # Build a new pipeline with the parsed and processed arguments
         pipeline = pipeline_parser.pipeline_factory(arg_ns, pipeline)
+
+        # Add an attribute for deployment configuration file to pipeline
+        if request.config.option.deployment_config:
+            pipeline.deployment_config = request.config.option.deployment_config
 
         # Build and set up the integration test api
         api = IntegrationTestAPI(pipeline, arg_ns.logs)
