@@ -11,6 +11,7 @@ import signal
 import time
 from pathlib import Path
 import shutil
+import json
 
 from fprime.common.models.serialize.time_type import TimeType
 
@@ -228,11 +229,30 @@ class IntegrationTestAPI(DataHandler):
 
     def get_deployment(self):
         """
-        Get the deployment of the target using the loaded FSW dictionary path
+        Get the deployment of the target using the loaded FSW dictionary.
+
         Returns:
-            The name of the deployment (str)
+            The name of the deployment (str) or None if not found
         """
-        return Path(self.pipeline.dictionary_path).parent.parent.name
+        dictionary = str(self.pipeline.dictionary_path)
+
+        try:
+            with open(dictionary, 'r') as file:
+                data = json.load(file)
+            deployment = data['metadata'].get("deploymentName")
+        except FileNotFoundError:
+            msg = f"Error: File not found at path: {dictionary}"
+            self.__log(msg, TestLogger.YELLOW)
+            return None
+        except json.JSONDecodeError as e:
+            msg = f"Error decoding JSON: {e}"
+            self.__log(msg, TestLogger.YELLOW)
+            return None
+        except Exception as e:
+            msg = f"An unexpected error occurred: {e} is an unknown key"
+            self.__log(msg, TestLogger.YELLOW)
+            return None
+        return deployment
 
     def wait_for_dataflow(self, count=1, channels=None, start=None, timeout=120):
         """
@@ -256,6 +276,78 @@ class IntegrationTestAPI(DataHandler):
             self.__log(msg, TestLogger.RED)
             assert False, msg
         self.remove_telemetry_subhistory(history)
+
+    def get_config_file_path(self):
+        """
+        Accessor for IntegrationTestAPI's deployment configuration file.
+
+        Returns:
+            path to user-specified deployment configuration file (str)
+        """
+        if hasattr(self.pipeline, "deployment_config"):
+            return self.pipeline.deployment_config
+
+    def load_config_file(self):
+        """
+        Load user-specified deployment configuration JSON file.
+
+        Returns:
+            JSON object as a dictionary
+        """
+        config_file = self.get_config_file_path()
+
+        try:
+            with open(config_file, 'r') as file:
+                result = json.load(file)
+        except FileNotFoundError:
+            msg = f"Error: File not found at path {config_file}"
+            self.__log(msg, TestLogger.RED)
+            assert False, msg
+        except json.JSONDecodeError as e:
+            msg = f"Error decoding JSON: {e}"
+            self.__log(msg, TestLogger.RED)
+            assert False, msg
+        except Exception as e:
+            msg = f"An unexpected error occurred: {e}"
+            self.__log(msg, TestLogger.RED)
+            assert False, msg
+        return result
+
+    def getCmdDispName(self, instance=None, name=None):
+        """
+        Get deployment mnemonic of specified item from user-specified deployment
+        configuration file.
+
+        Args:
+            instance: native component to instance (str), i.e. "<component>.<instance>"
+            name: command, channel, or event name (str) [optional]
+        Returns:
+            deployment mnemonic of specified item (str) or native mnemonic (str) if not found
+        """
+        data = self.load_config_file()
+
+        if data:
+            try:
+                mnemonic = data[instance]
+            except KeyError:
+                self.__log(f"Error: {instance} not found", TestLogger.YELLOW)
+                return f"{instance}.{name}" if name else f"{instance}"
+            return f"{mnemonic}.{name}" if name else f"{mnemonic}"
+
+    def getPrmDbFilename(self):
+        """
+        Get file path to parameter db from user-specified deployment configuration file.
+
+        Returns:
+            file path to parameter db (str) or None if not found
+        """
+        data = self.load_config_file()
+
+        if data:
+            try:
+                return data["Svc.PrmDb.filepath"]
+            except KeyError:
+                return None
 
     ######################################################################################
     #   History Functions
