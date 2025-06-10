@@ -346,7 +346,13 @@ class IntegrationTestAPI(DataHandler):
 
         if data:
             try:
-                return data["Svc.PrmDb.filename"]
+                filepath = data["Svc.PrmDb.filename"]
+                if filepath.startswith('/'):
+                    return filepath
+                else:
+                    msg = f"Error: {filepath} did not start with a forward slash"
+                    self.__log(msg, TestLogger.RED)
+                    assert False, msg
             except KeyError:
                 return None
 
