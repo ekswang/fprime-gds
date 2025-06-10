@@ -239,7 +239,7 @@ class IntegrationTestAPI(DataHandler):
         try:
             with open(dictionary, 'r') as file:
                 data = json.load(file)
-            deployment = data['metadata'].get("deploymentName")
+            return data['metadata'].get("deploymentName")
         except FileNotFoundError:
             msg = f"Error: File not found at path: {dictionary}"
             self.__log(msg, TestLogger.YELLOW)
@@ -252,7 +252,6 @@ class IntegrationTestAPI(DataHandler):
             msg = f"An unexpected error occurred: {e} is an unknown key"
             self.__log(msg, TestLogger.YELLOW)
             return None
-        return deployment
 
     def wait_for_dataflow(self, count=1, channels=None, start=None, timeout=120):
         """
@@ -286,6 +285,8 @@ class IntegrationTestAPI(DataHandler):
         """
         if hasattr(self.pipeline, "deployment_config"):
             return self.pipeline.deployment_config
+        else:
+            return None
 
     def load_config_file(self):
         """
@@ -299,6 +300,7 @@ class IntegrationTestAPI(DataHandler):
         try:
             with open(config_file, 'r') as file:
                 result = json.load(file)
+            return result
         except FileNotFoundError:
             msg = f"Error: File not found at path {config_file}"
             self.__log(msg, TestLogger.RED)
@@ -311,15 +313,14 @@ class IntegrationTestAPI(DataHandler):
             msg = f"An unexpected error occurred: {e}"
             self.__log(msg, TestLogger.RED)
             assert False, msg
-        return result
 
-    def getCmdDispName(self, instance=None, name=None):
+    def get_mnemonic(self, comp=None, name=None):
         """
         Get deployment mnemonic of specified item from user-specified deployment
         configuration file.
 
         Args:
-            instance: native component to instance (str), i.e. "<component>.<instance>"
+            comp: qualified name of the component (str), i.e. "<component>.<instance>"
             name: command, channel, or event name (str) [optional]
         Returns:
             deployment mnemonic of specified item (str) or native mnemonic (str) if not found
@@ -328,13 +329,13 @@ class IntegrationTestAPI(DataHandler):
 
         if data:
             try:
-                mnemonic = data[instance]
+                mnemonic = data[comp]
+                return f"{mnemonic}.{name}" if name else f"{mnemonic}"
             except KeyError:
-                self.__log(f"Error: {instance} not found", TestLogger.YELLOW)
-                return f"{instance}.{name}" if name else f"{instance}"
-            return f"{mnemonic}.{name}" if name else f"{mnemonic}"
+                self.__log(f"Error: {comp} not found", TestLogger.YELLOW)
+                return f"{comp}.{name}" if name else f"{comp}"
 
-    def getPrmDbFilename(self):
+    def get_prm_db_path(self) -> str:
         """
         Get file path to parameter db from user-specified deployment configuration file.
 
@@ -345,7 +346,7 @@ class IntegrationTestAPI(DataHandler):
 
         if data:
             try:
-                return data["Svc.PrmDb.filepath"]
+                return data["Svc.PrmDb.filename"]
             except KeyError:
                 return None
 
