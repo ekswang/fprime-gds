@@ -52,11 +52,11 @@ def pytest_addoption(parser):
         action="store_true",
         help="Enable JUnitXML report generation to a specified location"
     )
-    # Add an option to specify a json config file that maps instances
+    # Add an option to specify a json config file that maps components
     parser.addoption(
         "--deployment-config",
         action="store",
-        help="Path to JSON configuration file for mapping deployment instances"
+        help="Path to JSON configuration file for mapping deployment components"
     )
 
 def pytest_configure(config):
