@@ -71,7 +71,7 @@ def pytest_configure(config):
 
     # Get the file path to the deployment configuration file
     if config.getoption("--deployment-config"):
-        config.option.deployment_config = config.getoption("--deployment-config")
+        deployment_config = config.getoption("--deployment-config")
 
 @pytest.fixture(scope='session')
 def fprime_test_api_session(request):
@@ -95,6 +95,7 @@ def fprime_test_api_session(request):
     pipeline_parser = StandardPipelineParser()
     pipeline = None
     api = None
+    deployment_config = None
     try:
         # Parse the command line arguments into a client connection
         arg_ns = pipeline_parser.handle_arguments(request.config.known_args_namespace, client=True)
@@ -102,12 +103,12 @@ def fprime_test_api_session(request):
         # Build a new pipeline with the parsed and processed arguments
         pipeline = pipeline_parser.pipeline_factory(arg_ns, pipeline)
 
-        # Add an attribute for deployment configuration file to pipeline
+        # Get deployment configuration from command line arguments
         if request.config.option.deployment_config:
-            pipeline.deployment_config = request.config.option.deployment_config
+            deployment_config = request.config.option.deployment_config
 
         # Build and set up the integration test api
-        api = IntegrationTestAPI(pipeline, arg_ns.logs)
+        api = IntegrationTestAPI(pipeline, deployment_config, arg_ns.logs)
         api.setup()
 
         # Return the API. Note: the second call here-in will begin after the yield and clean-up after the test
