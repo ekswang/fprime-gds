@@ -31,15 +31,17 @@ class IntegrationTestAPI(DataHandler):
 
     NOW = "NOW"
 
-    def __init__(self, pipeline, logpath=None, fsw_order=True):
+    def __init__(self, pipeline, deployment_config, logpath=None, fsw_order=True):
         """
         Initializes API: constructs and registers test histories.
         Args:
             pipeline: a pipeline object providing access to basic GDS functionality
+            deployment_config: path to deployment configuration file
             logpath: an optional output destination for the api test log
             fsw_order: a flag to determine whether the API histories will maintain FSW time order.
         """
         self.pipeline = pipeline
+        self.deployment_config = deployment_config
 
         # these are owned by the GDS and will not be modified by the test API.
         self.aggregate_command_history = pipeline.histories.commands
@@ -281,10 +283,10 @@ class IntegrationTestAPI(DataHandler):
         Accessor for IntegrationTestAPI's deployment configuration file.
 
         Returns:
-            path to user-specified deployment configuration file (str)
+            path to user-specified deployment configuration file (str) or None if not defined
         """
-        if hasattr(self.pipeline, "deployment_config"):
-            return self.pipeline.deployment_config
+        if self.deployment_config:
+            return self.deployment_config
         else:
             return None
 
@@ -320,7 +322,7 @@ class IntegrationTestAPI(DataHandler):
         configuration file.
 
         Args:
-            comp: qualified name of the component (str), i.e. "<component>.<instance>"
+            comp: qualified name of the component instance (str), i.e. "<component>.<instance>"
             name: command, channel, or event name (str) [optional]
         Returns:
             deployment mnemonic of specified item (str) or native mnemonic (str) if not found
@@ -334,6 +336,8 @@ class IntegrationTestAPI(DataHandler):
             except KeyError:
                 self.__log(f"Error: {comp} not found", TestLogger.YELLOW)
                 return f"{comp}.{name}" if name else f"{comp}"
+        else:
+            return f"{comp}.{name}" if name else f"{comp}"
 
     def get_prm_db_path(self) -> str:
         """
@@ -355,6 +359,8 @@ class IntegrationTestAPI(DataHandler):
                     assert False, msg
             except KeyError:
                 return None
+        else:
+            return None
 
     ######################################################################################
     #   History Functions
