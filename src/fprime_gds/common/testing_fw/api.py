@@ -31,7 +31,7 @@ class IntegrationTestAPI(DataHandler):
 
     NOW = "NOW"
 
-    def __init__(self, pipeline, deployment_config, logpath=None, fsw_order=True):
+    def __init__(self, pipeline, deployment_config=None, logpath=None, fsw_order=True):
         """
         Initializes API: constructs and registers test histories.
         Args:
