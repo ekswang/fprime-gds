@@ -69,10 +69,6 @@ def pytest_configure(config):
     if config.getoption("--gen-junitxml"):
         config.option.xmlpath = Path(config.getoption("--logs")) / config.getoption("--junit-xml-file")
 
-    # Get the file path to the deployment configuration file
-    if config.getoption("--deployment-config"):
-        deployment_config = config.getoption("--deployment-config")
-
 @pytest.fixture(scope='session')
 def fprime_test_api_session(request):
     """ Create a session-level fprime test API
